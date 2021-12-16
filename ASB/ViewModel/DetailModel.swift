@@ -10,4 +10,12 @@ import UIKit
 
 class DetailModel: NSObject {
 
+    func getdate(_detailList: ListViewModel) -> String{
+        let date = _detailList.transactionDate.components(separatedBy:"T")
+        return date[0]
+    }
+    func  gSTCalculation(_amount: Double) -> Double{
+        let gSTAmount  = _amount*3/23
+        return  gSTAmount
+    }
 }

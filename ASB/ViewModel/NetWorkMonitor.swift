@@ -29,7 +29,6 @@ final class NetWorkMonitor{
         monitor.start(queue: queue)
         monitor.pathUpdateHandler = { [weak self] path in
             self?.isConnected = path.status == .satisfied
-            print(self?.isConnected ?? "N/A")
             self?.getConnectionType(_path:path)
         }
         

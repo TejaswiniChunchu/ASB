@@ -10,65 +10,74 @@ import UIKit
 
 class ListViewController: UIViewController {
     @IBOutlet weak var ListTableView: UITableView!
-    var listViewModel = [ListViewModel]()
-   
+    @IBOutlet var viewModel: viewModel!
+    
+    var sectionHeaderHeight: CGFloat = 0.0
     
     override func viewDidLoad() {
-         super.viewDidLoad()
+        super.viewDidLoad()
         setUpTableView()
-       
+        checkInternetConnection()
+        sectionHeaderHeight = (ListTableView.dequeueReusableCell(withIdentifier: "ListTableViewCell")?.contentView.bounds.height)!
     }
+    
     func setUpTableView(){
         self.ListTableView.delegate = self
         self.ListTableView.dataSource = self
-        let  url = "https://60220907ae8f8700177dee68.mockapi.io/api/v1/transactions"
-        fetchDataFromURL(seturl: url)
     }
     
-    func fetchDataFromURL(seturl: String){
-        guard let url = URL(string: seturl) else {return}
-        let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
-            guard let dataResponse = data,
-                error == nil else {
-                    print(error?.localizedDescription ?? "Response Error")
-                    return }
-            do{
-                let jsonResponse = try JSONSerialization.jsonObject(with:
-                    dataResponse, options: [])
-                guard let jsonArray = jsonResponse as? [[String: Any]] else {
-                    return
-                }
-                for dic in jsonArray{
-                   self.listViewModel.append(ListViewModel(dic))
-                }
-                
+    func checkInternetConnection(){
+        if NetWorkMonitor.shared.isConnected{
+            viewModel.fetchDataFromURL {
                 DispatchQueue.main.async {
                     self.ListTableView.reloadData()
                 }
-            } catch let parsingError {
-                print("Error", parsingError)
             }
+        }else{
+            let controller = UIAlertController(title: "This page can't be loaded No internet connection", message: "", preferredStyle: .alert)
+            let ok = UIAlertAction(title: "OK", style: .default, handler: nil)
+            
+            controller.addAction(ok)
+            present(controller, animated: true, completion: nil)
         }
-        task.resume()
     }
 }
 
-extension ListViewController : UITableViewDelegate,UITableViewDataSource{
+extension ListViewController : UITableViewDataSource{
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.listViewModel.count
+        return viewModel.headerListViewModel[section].transaction.count
+        
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-     let cell = tableView.dequeueReusableCell(withIdentifier: "ListTableViewCell") as! ListTableViewCell
-        cell.initialiseOutlet(_listViewModel: self.listViewModel[indexPath.row])
+        let cell = tableView.dequeueReusableCell(withIdentifier: "ListTableViewCell") as! ListTableViewCell
+        cell.initialiseOutlet(_listViewModel: viewModel.headerListViewModel[indexPath.section].transaction[indexPath.row])
         return cell
     }
+    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        print(self.listViewModel[indexPath.row])
         let vc = self.storyboard?.instantiateViewController(withIdentifier: "DetailViewController") as! DetailViewController
-        //        vc.PostId = selectedrow.id
+        vc.detailList = [viewModel.headerListViewModel[indexPath.section].transaction[indexPath.row]]
         self.navigationController?.pushViewController(vc, animated: true)
+    }
+    
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return viewModel.headerListViewModel.count
+        
+    }
+    
+}
+
+extension ListViewController : UITableViewDelegate{
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return sectionHeaderHeight
+    }
+    
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        
+        return viewModel.headerListViewModel[section].dateName ?? ""
     }
     
 }

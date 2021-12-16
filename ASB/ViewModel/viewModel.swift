@@ -9,8 +9,13 @@
 import UIKit
 
 class viewModel: NSObject {
-
-    func numberOfItemsInSection(section: Int) -> Int{
-        return 10
+    var httpService = HttpService()
+    var headerListViewModel = [HeaderListViewModel]()
+    func fetchDataFromURL(completion: @escaping() -> () ){
+        httpService.fetchDataFromURL { headerListViewModel in
+            
+            self.headerListViewModel = headerListViewModel
+            completion()
+        }
     }
 }
